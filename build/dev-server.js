@@ -1,0 +1,148 @@
+var config = require('../config')
+if (!process.env.NODE_ENV) process.env.NODE_ENV = config.dev.env
+var path = require('path')
+var express = require('express')
+var webpack = require('webpack')
+var opn = require('opn')
+var proxyMiddleware = require('http-proxy-middleware')
+var webpackConfig = process.env.NODE_ENV === 'testing'
+  ? require('./webpack.prod.conf')
+  : require('./webpack.dev.conf')
+
+// default port where dev server listens for incoming traffic
+var port = process.env.PORT || config.dev.port
+// Define HTTP proxies to your custom API backend
+// https://github.com/chimurai/http-proxy-middleware
+var proxyTable = config.dev.proxyTable
+
+var app = express()
+var compiler = webpack(webpackConfig)
+
+var devMiddleware = require('webpack-dev-middleware')(compiler, {
+  publicPath: webpackConfig.output.publicPath,
+  stats: {
+    colors: true,
+    chunks: false
+  }
+})
+
+var hotMiddleware = require('webpack-hot-middleware')(compiler)
+// force page reload when html-webpack-plugin template changes
+compiler.plugin('compilation', function (compilation) {
+  compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
+    hotMiddleware.publish({ action: 'reload' })
+    cb()
+  })
+})
+
+// proxy api requests
+Object.keys(proxyTable).forEach(function (context) {
+  var options = proxyTable[context]
+  if (typeof options === 'string') {
+    options = { target: options }
+  }
+  app.use(proxyMiddleware(context, options))
+})
+
+// handle fallback for HTML5 history API
+app.use(require('connect-history-api-fallback')())
+
+// serve webpack bundle output
+app.use(devMiddleware)
+
+// enable hot-reload and state-preserving
+// compilation error display
+app.use(hotMiddleware)
+
+// serve pure static assets
+var staticPath = path.posix.join(config.dev.assetsPublicPath, config.dev.assetsSubDirectory)
+app.use(staticPath, express.static('./static'))
+
+
+var server = require('http').createServer(app)
+var io = require('socket.io')(server)
+var waiting = []
+var matched = {}
+
+io.on('connection', function (socket) {
+  var log = function () {
+    var array = ['From server:']
+    array.push.apply(array, arguments)
+    socket.emit('log', array)
+  }
+
+  log('connected', socket.id)
+
+  socket.on('match', function () {
+    log('matching')
+    // 从等待队列中移除自身
+    var myIndex = waiting.indexOf(socket.id)
+    if (myIndex != -1) {
+      waiting.splice(myIndex, 1)
+    }
+
+    while (waiting.length) {
+      var index = Math.floor(Math.random() * waiting.length)
+      var id = waiting[index]
+      waiting.splice(index, 1)
+
+      if (io.sockets.connected[id]) {
+        matched[id] = socket.id
+        matched[socket.id] = id
+        socket.emit('matched')
+        return
+      }
+    }
+
+    waiting.push(socket.id)
+    log('not matched')
+  })
+
+  socket.on('disconnect', function () {
+    var id = matched[socket.id]
+    if (id) {
+      delete matched[socket.id]
+      delete matched[id]
+      io.sockets.connected[id].emit('stopped')
+    }
+  })
+
+  socket.on('stop', function () {
+    var id = matched[socket.id]
+    if (id) {
+      delete matched[socket.id]
+      delete matched[id]
+      io.sockets.connected[id].emit('stopped')
+    }
+  })
+
+  socket.on('ice candidate', function (candidate) {
+    log('send ice candidate')
+    io.sockets.connected[matched[socket.id]].emit('ice candidate', candidate)
+  })
+
+  socket.on('send offer', function (offer) {
+    log('send offer')
+    io.sockets.connected[matched[socket.id]].emit('get offer', offer)
+  })
+
+  socket.on('send answer', function (answer) {
+    log('send answer')
+    io.sockets.connected[matched[socket.id]].emit('get answer', answer)
+  })
+
+  socket.on('chat', function (text) {
+    log('send message')
+    io.sockets.connected[matched[socket.id]].emit('chat', {text, role: 'partner'})
+  })
+})
+
+module.exports = server.listen(port, function (err) {
+  if (err) {
+    console.log(err)
+    return
+  }
+  var uri = 'http://localhost:' + port
+  console.log('Listening at ' + uri + '\n')
+  // opn(uri)
+})
