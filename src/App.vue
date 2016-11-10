@@ -1,24 +1,19 @@
 <template>
   <div id="app">
-    <my-header></my-header>
-    <div class="container flex">
-      <webcam></webcam>
-      <room></room>      
-    </div>
+    <app-header></app-header>
+    <app-container></app-container>
   </div>
 </template>
 
 <script>
-import myHeader from './components/Header'
-import Webcam from './components/Webcam'
-import Room from './components/Room'
+import appHeader from './components/Header'
+import appContainer from './components/Container'
 
 export default {
   name: 'app',
   components: {
-    myHeader,
-    Webcam,
-    Room
+    appHeader,
+    appContainer
   }
 }
 </script>
@@ -42,14 +37,28 @@ ul, h1, h2 {
   padding: 0;
 }
 
+button {
+  height: 100%;
+  border: none;
+  font-size: 1rem;
+  outline: none;
+  cursor: pointer;
+  color: #767676;
+  background-color: #fff;
+
+  &:hover {
+    color: #333;
+  }
+
+  &:active {
+    color: #000;
+  }
+}
+
 #app {
   height: 100%;
   overflow: hidden;
   position: relative;
-
-  .container {
-    height: calc(100% - 61px);
-  }
 }
 
 .flex {

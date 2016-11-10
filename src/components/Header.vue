@@ -2,24 +2,37 @@
   <header class="flex">
     <h1>Chatroulette</h1>
     <ul>
-      <li><my-button @click.native="start" value="Start" /></li>
-      <li><my-button @click.native="stop" value="Stop" /></li>
+      <li>
+        <button type="button" v-if="state == 'closed'" @click="start">Start</button>
+        <button type="button" v-else @click="next" :disabled="state == 'connecting'">Next</button>
+      </li>
+      <li><button type="button" @click="stop" :disabled="state == 'closed'">Stop</button></li>
     </ul>
   </header>
 </template>
 
 <script>
-import {start, stop} from '../connection'
-import myButton from './Button'
+import {mapGetters, mapMutations} from 'vuex'
 
 export default {
   name: 'header',
+  computed: mapGetters({
+    state: 'connectionState'
+  }),
   methods: {
-    start,
-    stop
-  },
-  components: {
-    myButton
+    start () {
+      let constraints = {audio: false, video: true}
+      this.$store.commit('createPeerConnection')
+      this.$store.dispatch('getUserMedia', constraints)
+      this.$store.commit('clearMessages')
+    },
+    next () {
+      this.$store.commit('clearMessages')
+      this.$store.commit('lookForPeer')
+    },
+    ...mapMutations({
+      stop: 'closePeerConnection'
+    })
   }
 }
 </script>

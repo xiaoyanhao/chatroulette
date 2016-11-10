@@ -1,15 +1,11 @@
 <template>
   <div class="room flex">
-<!--     <div class="header-wrapper">
-      <h2>Text chat</h2>
-    </div>
- -->
     <div class="chat-wrapper">
-      <ul class="chat">
-        <li v-for="(message, index) of messages" :key="index" :class="message.role">
+      <transition-group tag="ul" name="messages" @enter="enter">
+        <li v-for="(message, index) of messages" :key="index" :class="message.role" class="message">
           <p>{{message.text}}</p>
         </li>
-      </ul>
+      </transition-group>
     </div>
 
     <div class="input-wrapper flex">
@@ -17,50 +13,42 @@
         <div class="tool-bar">
           <ul>
             <li></li>
-            <li>️</li>
           </ul>
         </div>
         <textarea class="textarea" ref="textarea"></textarea>
       </div>
       <div class="action-area">
-        <my-button value="Send" classname="send" @click.native="send" />
+        <button type="button" class="send" @click="sendMessage">Send</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import myButton from './Button'
-import socket from '../socket'
-
-let messages = []
-
-socket.on('chat', function (message) {
-  console.log('get message')
-  messages.push(message)
-})
+import {mapState} from 'vuex'
+import {log} from '../logger'
 
 export default {
   name: 'room',
-  data () {
-    return {
-      messages
-    }
-  },
+  computed: mapState(['messages']),
   methods: {
-    send: function (event) {
+    enter (el) {
+      el.scrollIntoView({block: 'end', behavior: 'auto'})
+      // let chatWrapper = el.parentNode.parentNode
+      // chatWrapper.scrollTop = chatWrapper.scrollHeight - chatWrapper.clientHeight
+    },
+    sendMessage (event) {
       let textarea = this.$refs.textarea
       let text = textarea.value
       if (text) {
-        this.messages.push({text, role: 'you'})
-        console.log('send message')
+        this.$store.commit('addMessage', {text, role: 'you'})
         textarea.value = ''
-        socket.emit('chat', text)
+        if (this.$store.getters.connectionState === 'connected') {
+          this.$store.state.socket.emit('chat', text)
+          log('send message to partner')
+        }
       }
     }
-  },
-  components: {
-    myButton
   }
 }
 </script>
@@ -71,73 +59,72 @@ export default {
   flex-flow: column nowrap;
 }
 
-.header-wrapper {
-  padding: 10px 20px;
-  border-bottom: 1px solid #ddd;
-  h2 {
-    font-size: 1rem;
-    color: #767676;
-  }
-}
-
 .chat-wrapper {
   padding: 20px;
   flex: 1 1 100%;
-  border-bottom: 1px solid #ddd;
   overflow-y: auto;
 
-  .chat {
-    li {
-      border-radius: 5px;
-      padding: 10px;
-      clear: both;
-      max-width: 70%;
-      list-style-type: none;
-      margin: 10px 0;
+  .messages-enter {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .messages-move {
+    transition: all 0.5s;
+  }
+
+  .message {
+    border-radius: 5px;
+    padding: 10px;
+    clear: both;
+    max-width: 70%;
+    list-style-type: none;
+    margin: 10px 0;
+    transition: all 0.5s;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .you {
+    float: right;
+    background-color: lawnGreen;
+    position: relative;
+
+    p::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border: 10px solid lawnGreen;
+      position: absolute;
+      top: 0;
+      right: -10px;
+      border-color: lawnGreen transparent transparent transparent;
     }
+  }
 
-    p {
-      margin: 0;
-      line-height: 1.5;
-    }
+  .partner {
+    float: left;
+    background-color: whiteSmoke;
+    position: relative;
 
-    .you {
-      float: right;
-      background-color: lawnGreen;
-      position: relative;
-
-      p::after {
-        content: '';
-        width: 0;
-        height: 0;
-        border: 10px solid lawnGreen;
-        position: absolute;
-        top: 0;
-        right: -10px;
-        border-color: lawnGreen transparent transparent transparent;
-      }
-    }
-
-    .partner {
-      float: left;
-      background-color: whiteSmoke;
-      position: relative;
-
-      p::before {
-        content: '';
-        width: 0;
-        height: 0;
-        border: 10px solid lawnGreen;
-        position: absolute;
-        top: 0;
-        left: -10px;
-        border-color: whiteSmoke transparent transparent transparent;
-      }
+    p::before {
+      content: '';
+      width: 0;
+      height: 0;
+      border: 10px solid lawnGreen;
+      position: absolute;
+      top: 0;
+      left: -10px;
+      border-color: whiteSmoke transparent transparent transparent;
     }
   }
 }
 
 .input-wrapper {
+  border-top: 1px solid #ddd;
   flex: 1 0 auto;
 
   .input-area {
@@ -151,7 +138,7 @@ export default {
 
   textarea {
     width: 100%;
-    min-height: 50px;
+    height: 60px;
     resize: none;
     border: none;
     padding: 0;
@@ -169,5 +156,13 @@ export default {
 
 .send {
   width: 80px;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+
+  &:active {
+    background-color: #eeeeee;
+  }
 }
 </style>

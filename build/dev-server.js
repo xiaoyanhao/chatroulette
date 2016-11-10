@@ -71,11 +71,10 @@ io.on('connection', function (socket) {
     socket.emit('log', array)
   }
 
-  log('connected', socket.id)
+  log('socket connected', socket.id)
 
-  socket.on('match', function () {
-    log('matching')
-    // 从等待队列中移除自身
+  socket.on('look for peer', function () {
+
     var myIndex = waiting.indexOf(socket.id)
     if (myIndex != -1) {
       waiting.splice(myIndex, 1)
@@ -89,13 +88,14 @@ io.on('connection', function (socket) {
       if (io.sockets.connected[id]) {
         matched[id] = socket.id
         matched[socket.id] = id
-        socket.emit('matched')
+        socket.emit('find peer')
+        log('find peer')
         return
       }
     }
 
     waiting.push(socket.id)
-    log('not matched')
+    log('waiting')
   })
 
   socket.on('disconnect', function () {
@@ -103,16 +103,7 @@ io.on('connection', function (socket) {
     if (id) {
       delete matched[socket.id]
       delete matched[id]
-      io.sockets.connected[id].emit('stopped')
-    }
-  })
-
-  socket.on('stop', function () {
-    var id = matched[socket.id]
-    if (id) {
-      delete matched[socket.id]
-      delete matched[id]
-      io.sockets.connected[id].emit('stopped')
+      io.sockets.connected[id].emit('reconnect')
     }
   })
 
