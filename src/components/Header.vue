@@ -1,5 +1,5 @@
 <template>
-  <header class="flex">
+  <header id="header" class="flex">
     <h1>Chatroulette</h1>
     <ul>
       <li>
@@ -38,7 +38,7 @@ export default {
 </script>
 
 <style lang="scss">
-header {
+#header {
   height: 60px;
   border-bottom: 1px solid #ddd;
   box-shadow: 0 1px 2px rgba(0,0,0,0.075);

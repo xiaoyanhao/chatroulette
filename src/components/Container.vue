@@ -1,5 +1,5 @@
 <template>
-  <div class="container flex">
+  <div id="container" class="flex">
     <webcam></webcam>
     <room></room>      
   </div>
@@ -19,7 +19,7 @@ export default {
 </script>
 
 <style lang="scss">
-.container {
+#container {
   height: calc(100% - 61px);
 }
 </style>

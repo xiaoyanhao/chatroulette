@@ -1,5 +1,5 @@
 <template>
-  <aside class="webcam">
+  <aside id="webcam">
     <div class="partner">
       <h2>Partner</h2>
       <video autoplay ref="remote" @loadedmetadata="loaded"></video>
@@ -35,7 +35,7 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss">
-.webcam {
+#webcam {
   min-width: 320px;
   border-right: 1px solid #ddd;
   overflow: auto;

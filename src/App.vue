@@ -37,6 +37,10 @@ ul, h1, h2 {
   padding: 0;
 }
 
+li {
+  list-style-type: none;
+}
+
 button {
   height: 100%;
   border: none;
