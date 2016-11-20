@@ -41,6 +41,11 @@ li {
   list-style-type: none;
 }
 
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
 button {
   height: 100%;
   border: none;

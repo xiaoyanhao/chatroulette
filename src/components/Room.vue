@@ -13,12 +13,12 @@
         <div class="tool-bar">
           <ul>
             <li class="tool-bar-item emoji">
-              <i class="fa fa-smile-o" aria-hidden="true" @click="highlight"></i>
+              <i class="fa fa-smile-o" aria-hidden="true" :class="{active: showEmoji}" @click="highlight"></i>
               <emoji @addEmoji="addEmoji" :showEmoji="showEmoji"></emoji>
             </li>
           </ul>
         </div>
-        <textarea class="textarea" ref="textarea"></textarea>
+        <textarea class="textarea" ref="textarea" @keyup.stop="handleInput"></textarea>
       </div>
       <div class="action-area">
         <button type="button" class="send" @click="sendMessage">Send</button>
@@ -29,7 +29,6 @@
 
 <script>
 import {mapState} from 'vuex'
-import {log} from '../logger'
 import Emoji from './Emoji'
 
 export default {
@@ -47,7 +46,6 @@ export default {
       // chatWrapper.scrollTop = chatWrapper.scrollHeight - chatWrapper.clientHeight
     },
     highlight (event) {
-      event.target.classList.toggle('active')
       this.showEmoji = !this.showEmoji
     },
     addEmoji (emoji) {
@@ -60,6 +58,11 @@ export default {
       textarea.setSelectionRange(start + 2, start + 2) // emoji takes up two code units
       textarea.focus()
     },
+    handleInput (event) {
+      if (!event.shiftKey && event.key === 'Enter') {
+        this.sendMessage()
+      }
+    },
     sendMessage (event) {
       let textarea = this.$refs.textarea
       let text = textarea.value
@@ -67,8 +70,7 @@ export default {
         this.$store.commit('addMessage', {text, role: 'you'})
         textarea.value = ''
         if (this.$store.getters.connectionState === 'connected') {
-          this.$store.state.socket.emit('chat', text)
-          log('send message to partner')
+          this.$store.state.socket.emit('signal', {type: 'chat', data: {text, role: 'partner'}})
         }
       }
     }

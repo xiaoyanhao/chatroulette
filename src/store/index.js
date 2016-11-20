@@ -4,8 +4,7 @@ import state from './state'
 import getters from './getters'
 import mutations from './mutations'
 import actions from './actions'
-import createLogger from 'vuex/dist/logger'
-import {createWebSocket} from './plugins'
+import plugins from './plugins'
 
 Vue.use(Vuex)
 
@@ -14,9 +13,7 @@ const store = new Vuex.Store({
   getters,
   mutations,
   actions,
-  plugins: process.env.NODE_ENV !== 'production'
-    ? [createLogger(), createWebSocket(state.socket)]
-    : [createWebSocket(state.socket)]
+  plugins
 })
 
 if (module.hot) {

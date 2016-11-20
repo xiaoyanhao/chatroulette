@@ -1,18 +1,24 @@
 <template>
   <header id="header" class="flex">
-    <h1>Chatroulette</h1>
-    <ul>
+    <h1>
+      <a href="/">Chatroulette</a>
+    </h1>
+    <ul class="control">
       <li>
-        <button type="button" v-if="state == 'closed'" @click="start">Start</button>
-        <button type="button" v-else @click="next" :disabled="state == 'connecting'">Next</button>
+        <button type="button" @click="start" ref="start">Start</button>
       </li>
-      <li><button type="button" @click="stop" :disabled="state == 'closed'">Stop</button></li>
+      <li>
+        <button type="button" @click="next" :disabled="state !== 'connected'">Next</button>
+      </li>
+      <li>
+        <button type="button" @click="stop" ref="stop" disabled>Stop</button>
+      </li>
     </ul>
   </header>
 </template>
 
 <script>
-import {mapGetters, mapMutations} from 'vuex'
+import {mapGetters} from 'vuex'
 
 export default {
   name: 'header',
@@ -25,14 +31,20 @@ export default {
       this.$store.commit('createPeerConnection')
       this.$store.dispatch('getUserMedia', constraints)
       this.$store.commit('clearMessages')
+      this.$refs.start.disabled = true
+      this.$refs.stop.disabled = false
     },
     next () {
+      this.$store.commit('closePeerConnection')
       this.$store.commit('clearMessages')
-      this.$store.commit('lookForPeer')
+      this.$store.commit('createPeerConnection')
+      this.$store.commit('addLocalStream', this.$store.state.localStream)
     },
-    ...mapMutations({
-      stop: 'closePeerConnection'
-    })
+    stop () {
+      this.$store.commit('closePeerConnection')
+      this.$refs.stop.disabled = true
+      this.$refs.start.disabled = false
+    }
   }
 }
 </script>
@@ -49,10 +61,15 @@ export default {
     margin-left: 10px;
   }
 
-  ul {
+  .control {
     li {
       display: inline-block;
       margin-right: 20px;
+    }
+
+    button[disabled] {
+      cursor: not-allowed;
+      color: #767676;
     }
   }
 }

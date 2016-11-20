@@ -9,7 +9,7 @@ export default {
 
   createAnswer: ({state}) => state.peerConnection.createAnswer(),
 
-  getUserMedia ({commit}, constraints) {
+  getUserMedia ({commit, state}, constraints) {
     navigator.mediaDevices.getUserMedia(constraints)
     .then(mediaStream => {
       commit('addLocalStream', mediaStream)
@@ -20,6 +20,7 @@ export default {
         case 'TypeError':
           break
         default:
+          state.socket.emit('look for peer')
           window.alert(error.name, error.message)
       }
     })

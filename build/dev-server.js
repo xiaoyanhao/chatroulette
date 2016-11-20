@@ -98,33 +98,29 @@ io.on('connection', function (socket) {
     log('waiting')
   })
 
+  socket.on('hangup', function () {
+    var id = matched[socket.id]
+    if (id) {
+      delete matched[socket.id]
+      delete matched[id]
+      io.sockets.connected[id].emit('restart')
+    }    
+  })
+
   socket.on('disconnect', function () {
     var id = matched[socket.id]
     if (id) {
       delete matched[socket.id]
       delete matched[id]
-      io.sockets.connected[id].emit('reconnect')
     }
   })
 
-  socket.on('ice candidate', function (candidate) {
-    log('send ice candidate')
-    io.sockets.connected[matched[socket.id]].emit('ice candidate', candidate)
-  })
+  socket.on('signal', function (msg) {
+    var id = matched[socket.id]
 
-  socket.on('send offer', function (offer) {
-    log('send offer')
-    io.sockets.connected[matched[socket.id]].emit('get offer', offer)
-  })
-
-  socket.on('send answer', function (answer) {
-    log('send answer')
-    io.sockets.connected[matched[socket.id]].emit('get answer', answer)
-  })
-
-  socket.on('chat', function (text) {
-    log('send message')
-    io.sockets.connected[matched[socket.id]].emit('chat', {text, role: 'partner'})
+    if (id && io.sockets.connected[id]) {
+      io.sockets.connected[id].emit('signal', {type: msg.type, data: msg.data})
+    }
   })
 })
 

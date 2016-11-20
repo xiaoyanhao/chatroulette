@@ -1,13 +1,35 @@
-import {log, reportError} from '../logger'
+import state from './state'
+import createLogger from 'vuex/dist/logger'
 
-export const createWebSocket = socket => {
+const createWebSocket = socket => {
   return ({commit, dispatch, state}) => {
-    socket.on('chat', message => commit('addMessage', message))
+    socket.on('signal', signal => {
+      switch (signal.type) {
+        case 'icecandidate':
+          dispatch('addIceCandidate', signal.data)
+          .catch((error) => console.error(error.name, ':', error.message))
+          break
 
-    socket.on('ice candidate', candidate => {
-      dispatch('addIceCandidate', candidate)
-      .then(() => log('add ice candidate'))
-      .catch(reportError)
+        case 'offer':
+          dispatch('setRemoteDescription', signal.data)
+          .then(() => dispatch('createAnswer'))
+          .then(answer => dispatch('setLocalDescription', answer))
+          .then(() => socket.emit('signal', {type: 'answer', data: state.peerConnection.localDescription}))
+          .catch((error) => console.error(error.name, ':', error.message))
+          break
+
+        case 'answer':
+          dispatch('setRemoteDescription', signal.data)
+          .catch((error) => console.error(error.name, ':', error.message))
+          break
+
+        case 'chat':
+          commit('addMessage', signal.data)
+          break
+
+        default:
+          break
+      }
     })
 
     socket.on('find peer', () => {
@@ -18,23 +40,15 @@ export const createWebSocket = socket => {
 
       dispatch('createOffer', offerOptions)
       .then(offer => dispatch('setLocalDescription', offer))
-      .then(() => socket.emit('send offer', state.peerConnection.localDescription))
-      .catch(reportError)
+      .then(() => socket.emit('signal', {type: 'offer', data: state.peerConnection.localDescription}))
+      .catch((error) => console.error(error.name, ':', error.message))
     })
 
-    socket.on('reconnect', () => commit('lookForPeer'))
-
-    socket.on('get offer', offer => {
-      dispatch('setRemoteDescription', offer)
-      .then(() => dispatch('createAnswer'))
-      .then(answer => dispatch('setLocalDescription', answer))
-      .then(() => socket.emit('send answer', state.peerConnection.localDescription))
-      .catch(reportError)
-    })
-
-    socket.on('get answer', answer => {
-      dispatch('setRemoteDescription', answer)
-      .catch(reportError)
+    socket.on('restart', () => {
+      commit('closePeerConnection')
+      commit('clearMessages')
+      commit('createPeerConnection')
+      commit('addLocalStream', state.localStream)
     })
 
     socket.on('log', array => {
@@ -42,3 +56,7 @@ export const createWebSocket = socket => {
     })
   }
 }
+
+export default process.env.NODE_ENV !== 'production'
+  ? [createLogger(), createWebSocket(state.socket)]
+  : [createWebSocket(state.socket)]

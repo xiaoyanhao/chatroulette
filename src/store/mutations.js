@@ -1,25 +1,19 @@
-import {log} from '../logger'
-
 const iceCandidate = function (event) {
   if (event.candidate) {
-    this.socket.emit('ice candidate', event.candidate)
-    log('send ice candidate')
+    this.socket.emit('signal', {type: 'icecandidate', data: event.candidate})
   }
 }
 
 const track = function (event) {
   this.remoteStream = event.streams[0]
-  log('add remote track')
 }
 
 const addStream = function (event) {
   this.remoteStream = event.stream
-  log('add remote stream')
 }
 
 const removeStream = function (event) {
   this.remoteStream = null
-  log('remove remote stream')
 }
 
 const iceConnectionStateChange = function (event) {
@@ -30,7 +24,6 @@ const iceConnectionStateChange = function (event) {
 
 const negotiationNeeded = function (event) {
   this.socket.emit('look for peer')
-  log('negotiation needed')
 }
 
 export default {
@@ -41,7 +34,6 @@ export default {
     } else {
       state.peerConnection.addStream(stream)
     }
-    log('add local stream')
   },
 
   removeLocalStream (state) {
@@ -49,7 +41,6 @@ export default {
       state.localStream.getTracks().forEach(track => track.stop())
     }
     state.localStream = null
-    log('remove local stream')
   },
 
   createPeerConnection (state) {
@@ -80,6 +71,7 @@ export default {
 
   closePeerConnection (state) {
     if (state.peerConnection) {
+      state.remoteStream = null
       state.peerConnection.removeEventListener('icecandidate', iceCandidate)
       state.peerConnection.removeEventListener('track', track)
       state.peerConnection.removeEventListener('addstream', addStream)
@@ -88,12 +80,8 @@ export default {
       state.peerConnection.removeEventListener('negotiationneeded', negotiationNeeded)
       state.peerConnection.close()
       state.peerConnection = null
-      state.socket.emit('disconnect')
+      state.socket.emit('hangup')
     }
-  },
-
-  lookForPeer (state) {
-    state.socket.emit('look for peer')
   },
 
   clearMessages (state) {
