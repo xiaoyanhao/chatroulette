@@ -1,5 +1,5 @@
 <template>
-  <div id="emoji" v-if="showEmoji">
+  <div id="emoji">
     <ul class="groups" v-for="(group, index) in groups" v-show="activeIndex === index" @click="select">
       <li v-for="(emoji, index) in group" :key="index" class="emoji">{{emoji}}</li>
     </ul>
@@ -16,7 +16,6 @@ import Emoji from '../emoji.json'
 
 export default {
   name: 'emoji',
-  props: ['showEmoji'],
   data () {
     return {
       activeIndex: 0,

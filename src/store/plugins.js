@@ -23,10 +23,6 @@ const createWebSocket = socket => {
           .catch((error) => console.error(error.name, ':', error.message))
           break
 
-        case 'chat':
-          commit('addMessage', signal.data)
-          break
-
         default:
           break
       }
@@ -38,6 +34,8 @@ const createWebSocket = socket => {
         offerToReceiveVideo: true
       }
 
+      commit('createDataChannel')
+
       dispatch('createOffer', offerOptions)
       .then(offer => dispatch('setLocalDescription', offer))
       .then(() => socket.emit('signal', {type: 'offer', data: state.peerConnection.localDescription}))
@@ -45,8 +43,8 @@ const createWebSocket = socket => {
     })
 
     socket.on('restart', () => {
+      commit('closeDataChannel')
       commit('closePeerConnection')
-      commit('clearMessages')
       commit('createPeerConnection')
       commit('addLocalStream', state.localStream)
     })

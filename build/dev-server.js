@@ -112,6 +112,7 @@ io.on('connection', function (socket) {
     if (id) {
       delete matched[socket.id]
       delete matched[id]
+      io.sockets.connected[id].emit('restart')
     }
   })
 

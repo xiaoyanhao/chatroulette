@@ -1,19 +1,19 @@
 <template>
   <div id="container" class="flex">
-    <webcam></webcam>
-    <room></room>      
+    <container-webcam></container-webcam>
+    <container-room></container-room>      
   </div>
 </template>
 
 <script>
-import Webcam from './Webcam'
-import Room from './Room'
+import ContainerWebcam from './Webcam'
+import ContainerRoom from './Room'
 
 export default {
   name: 'container',
   components: {
-    Webcam,
-    Room
+    ContainerWebcam,
+    ContainerRoom
   }
 }
 </script>

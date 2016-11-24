@@ -8,7 +8,7 @@
         <button type="button" @click="start" ref="start">Start</button>
       </li>
       <li>
-        <button type="button" @click="next" :disabled="state !== 'connected'">Next</button>
+        <button type="button" @click="next" ref="next" disabled>Next</button>
       </li>
       <li>
         <button type="button" @click="stop" ref="stop" disabled>Stop</button>
@@ -18,32 +18,55 @@
 </template>
 
 <script>
-import {mapGetters} from 'vuex'
+import {mapState} from 'vuex'
 
 export default {
   name: 'header',
-  computed: mapGetters({
-    state: 'connectionState'
-  }),
+  computed: mapState(['localStream', 'connectionState']),
+  watch: {
+    connectionState (state) {
+      this.$store.commit('clearMessages')
+
+      if (state === 'closed') {
+        this.$refs.start.disabled = false
+        this.$refs.next.disabled = true
+        this.$refs.stop.disabled = true
+      } else if (state === 'open') {
+        this.$refs.start.disabled = true
+        this.$refs.next.disabled = false
+        this.$refs.stop.disabled = false
+        this.$store.commit('addMessage', {
+          role: 'system',
+          html: '<i class="fa fa-check"></i>',
+          text: 'Just say hello to each other :D'
+        })
+      } else if (state === 'connecting') {
+        this.$refs.start.disabled = true
+        this.$refs.next.disabled = true
+        this.$refs.stop.disabled = false
+        this.$store.commit('addMessage', {
+          role: 'system',
+          html: '<i class="fa fa-spinner fa-pulse"></i>',
+          text: 'Life is like a non-stop roulette. You never know who you will meet next...'
+        })
+      }
+    }
+  },
   methods: {
     start () {
       let constraints = {audio: false, video: true}
       this.$store.commit('createPeerConnection')
       this.$store.dispatch('getUserMedia', constraints)
-      this.$store.commit('clearMessages')
-      this.$refs.start.disabled = true
-      this.$refs.stop.disabled = false
     },
     next () {
+      this.$store.commit('closeDataChannel')
       this.$store.commit('closePeerConnection')
-      this.$store.commit('clearMessages')
       this.$store.commit('createPeerConnection')
-      this.$store.commit('addLocalStream', this.$store.state.localStream)
+      this.$store.commit('addLocalStream', this.localStream)
     },
     stop () {
+      this.$store.commit('closeDataChannel')
       this.$store.commit('closePeerConnection')
-      this.$refs.stop.disabled = true
-      this.$refs.start.disabled = false
     }
   }
 }

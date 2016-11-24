@@ -6,14 +6,14 @@
 </template>
 
 <script>
-import appHeader from './components/Header'
-import appContainer from './components/Container'
+import AppHeader from './components/Header'
+import AppContainer from './components/Container'
 
 export default {
   name: 'app',
   components: {
-    appHeader,
-    appContainer
+    AppHeader,
+    AppContainer
   }
 }
 </script>
