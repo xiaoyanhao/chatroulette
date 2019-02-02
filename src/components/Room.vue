@@ -3,6 +3,7 @@
     <room-messages></room-messages>
     <room-canvas></room-canvas>
     <room-input></room-input>
+  </div>
 </template>
 
 <script>

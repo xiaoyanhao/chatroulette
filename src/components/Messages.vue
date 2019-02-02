@@ -1,6 +1,6 @@
 <template>
   <transition-group tag="ul" id="messages" name="messages" @enter="enter">
-    <li v-for="(message, index) of messages" :key="index" :class="message.role" class="message">
+    <li v-for="(message, index) of messages" :key="`${index}`" :class="message.role" class="message">
       <p class="text"><span class="tip" v-html="message.html"></span>{{message.text}}</p>
     </li>
   </transition-group>
