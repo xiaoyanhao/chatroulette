@@ -13,10 +13,10 @@
 
 <script>
 import InputToolbar from './Toolbar'
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
-  name: 'input',
+  name: 'chat-input',
   computed: mapState(['dataChannel', 'connectionState']),
   methods: {
     handleInput (event) {
@@ -40,7 +40,7 @@ export default {
       let text = textarea.value
 
       if (text) {
-        this.$store.commit('addMessage', {text, role: 'you'})
+        this.$store.commit('addMessage', { text, role: 'you' })
         textarea.value = ''
         if (this.connectionState === 'open') {
           this.dataChannel.send(JSON.stringify({

@@ -1,11 +1,10 @@
 import Vue from 'vue'
+import App from './App.vue'
 import store from './store'
-import App from './App'
 
-/* eslint-disable no-new */
+Vue.config.productionTip = false
+
 new Vue({
-  el: '#app',
   store,
-  template: '<App />',
-  components: { App }
-})
+  render: h => h(App)
+}).$mount('#app')

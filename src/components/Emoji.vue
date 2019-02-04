@@ -1,25 +1,25 @@
 <template>
   <div id="emoji">
-    <ul class="groups" v-for="(group, index) in groups" v-show="activeIndex === index" @click="select">
+    <ul class="groups" v-for="(group, index) in groups" :key="index" v-show="activeIndex === index" @click="select">
       <li v-for="(emoji, index) in group" :key="index" class="emoji">{{emoji}}</li>
     </ul>
     <ul class="tabs">
       <li v-for="(tab, index) in tabs" class="tab" :key="index" @click="activeIndex = index">
-        <i class="fa" :class="[tab, {active: index === activeIndex}]"></i>
+        <i class="iconfont" :class="[tab, {active: index === activeIndex}]"></i>
       </li>
     </ul>
   </div>
 </template>
 
 <script>
-import Emoji from '../emoji.json'
+import Emoji from '../assets/emoji.json'
 
 export default {
   name: 'emoji',
   data () {
     return {
       activeIndex: 0,
-      tabs: ['fa-user', 'fa-leaf', 'fa-bell', 'fa-car', 'fa-font'],
+      tabs: ['icon-user', 'icon-leaf', 'icon-bell', 'icon-car', 'icon-font'],
       groups: Emoji.groups
     }
   },
@@ -97,7 +97,7 @@ export default {
       flex: 1 1 0;
       text-align: center;
 
-      .fa {
+      .iconfont {
         color: #aaa;
 
         &.active {

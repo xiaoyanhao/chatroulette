@@ -18,10 +18,10 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
-  name: 'header',
+  name: 'app-header',
   computed: mapState(['localStream', 'connectionState']),
   watch: {
     connectionState (state) {
@@ -37,7 +37,7 @@ export default {
         this.$refs.stop.disabled = false
         this.$store.commit('addMessage', {
           role: 'system',
-          html: '<i class="fa fa-check"></i>',
+          html: '<i class="iconfont icon-check"></i>',
           text: 'Just say hello to each other :D'
         })
       } else if (state === 'connecting') {
@@ -46,7 +46,7 @@ export default {
         this.$refs.stop.disabled = false
         this.$store.commit('addMessage', {
           role: 'system',
-          html: '<i class="fa fa-spinner fa-pulse"></i>',
+          html: '<i class="iconfont icon-spinner icon-pulse"></i>',
           text: 'Life is like a non-stop roulette. You never know who you will meet next...'
         })
       }
@@ -54,7 +54,7 @@ export default {
   },
   methods: {
     start () {
-      let constraints = {audio: false, video: true}
+      let constraints = { audio: false, video: true }
       this.$store.commit('createPeerConnection')
       this.$store.dispatch('getUserMedia', constraints)
     },

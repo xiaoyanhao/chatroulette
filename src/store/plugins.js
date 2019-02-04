@@ -2,25 +2,25 @@ import state from './state'
 import createLogger from 'vuex/dist/logger'
 
 const createWebSocket = socket => {
-  return ({commit, dispatch, state}) => {
+  return ({ commit, dispatch, state }) => {
     socket.on('signal', signal => {
       switch (signal.type) {
         case 'icecandidate':
           dispatch('addIceCandidate', signal.data)
-          .catch((error) => console.error(error.name, ':', error.message))
+            .catch((error) => console.error(error.name, ':', error.message))
           break
 
         case 'offer':
           dispatch('setRemoteDescription', signal.data)
-          .then(() => dispatch('createAnswer'))
-          .then(answer => dispatch('setLocalDescription', answer))
-          .then(() => socket.emit('signal', {type: 'answer', data: state.peerConnection.localDescription}))
-          .catch((error) => console.error(error.name, ':', error.message))
+            .then(() => dispatch('createAnswer'))
+            .then(answer => dispatch('setLocalDescription', answer))
+            .then(() => socket.emit('signal', { type: 'answer', data: state.peerConnection.localDescription }))
+            .catch((error) => console.error(error.name, ':', error.message))
           break
 
         case 'answer':
           dispatch('setRemoteDescription', signal.data)
-          .catch((error) => console.error(error.name, ':', error.message))
+            .catch((error) => console.error(error.name, ':', error.message))
           break
 
         default:
@@ -37,9 +37,9 @@ const createWebSocket = socket => {
       commit('createDataChannel')
 
       dispatch('createOffer', offerOptions)
-      .then(offer => dispatch('setLocalDescription', offer))
-      .then(() => socket.emit('signal', {type: 'offer', data: state.peerConnection.localDescription}))
-      .catch((error) => console.error(error.name, ':', error.message))
+        .then(offer => dispatch('setLocalDescription', offer))
+        .then(() => socket.emit('signal', { type: 'offer', data: state.peerConnection.localDescription }))
+        .catch((error) => console.error(error.name, ':', error.message))
     })
 
     socket.on('restart', () => {

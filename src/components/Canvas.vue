@@ -13,18 +13,18 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
-  name: 'canvas',
+  name: 'chat-canvas',
   data () {
     return {
-      prev: {x: 0, y: 0},
-      curr: {x: 0, y: 0},
+      prev: { x: 0, y: 0 },
+      curr: { x: 0, y: 0 },
       ctx: null,
       strokeStyle: 'black',
       lineWidth: 1,
-      style: {width: 0, height: 0}
+      style: { width: 0, height: 0 }
     }
   },
   computed: {
@@ -136,8 +136,8 @@ export default {
 
   .canvas-tool {
     position: absolute;
-    bottom: -31px;
-    left: 111px;
+    bottom: -33px;
+    left: 100px;
 
     input {
       vertical-align: middle;

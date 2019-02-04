@@ -7,14 +7,14 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
 
 export default {
   name: 'messages',
   computed: mapState(['messages']),
   methods: {
     enter (el) {
-      el.scrollIntoView({block: 'end', behavior: 'auto'})
+      el.scrollIntoView({ block: 'end', behavior: 'auto' })
       // let chatWrapper = el.parentNode.parentNode
       // chatWrapper.scrollTop = chatWrapper.scrollHeight - chatWrapper.clientHeight
     }
@@ -91,6 +91,6 @@ export default {
       left: -10px;
       border-color: whiteSmoke transparent transparent transparent;
     }
-  }  
+  }
 }
 </style>

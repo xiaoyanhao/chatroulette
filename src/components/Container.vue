@@ -1,7 +1,7 @@
 <template>
   <div id="container" class="flex">
     <container-webcam></container-webcam>
-    <container-room></container-room>      
+    <container-room></container-room>
   </div>
 </template>
 
