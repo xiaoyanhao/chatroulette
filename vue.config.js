@@ -5,7 +5,6 @@ let waiting = []
 let matched = {}
 
 io.on('connection', function (socket) {
-
   const log = function (...args) {
     args.unshift('From server:')
     socket.emit('log', args)
@@ -14,9 +13,8 @@ io.on('connection', function (socket) {
   log('socket connected', socket.id)
 
   socket.on('look for peer', function () {
-
     let myIndex = waiting.indexOf(socket.id)
-    if (myIndex != -1) {
+    if (myIndex !== -1) {
       waiting.splice(myIndex, 1)
     }
 
@@ -44,7 +42,7 @@ io.on('connection', function (socket) {
       delete matched[socket.id]
       delete matched[id]
       io.sockets.connected[id].emit('restart')
-    }    
+    }
   })
 
   socket.on('disconnect', function () {
