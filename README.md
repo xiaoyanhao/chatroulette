@@ -7,7 +7,7 @@
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### Start up the server
 ```
 npm start
 ```
