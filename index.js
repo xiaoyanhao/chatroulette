@@ -1,5 +1,26 @@
-const port = 8081
-const io = require('socket.io')(port)
+const Koa = require('koa')
+const app = new Koa()
+const server = require('http').createServer(app.callback())
+const io = require('socket.io')(server)
+const send = require('koa-send')
+
+app.use(async (ctx, next) => {
+  try {
+    await next()
+  } catch (err) {
+    // will only respond with JSON
+    ctx.status = err.statusCode || err.status || 500
+    ctx.body = { message: err.message }
+  }
+})
+
+app.use(async ctx => {
+  if (ctx.path === '/') {
+    await send(ctx, ctx.path + 'index.html', { root: __dirname + '/static' })
+  } else {
+    await send(ctx, ctx.path, { root: __dirname + '/static' })
+  }
+})
 
 let waiting = []
 let matched = {}
@@ -63,12 +84,4 @@ io.on('connection', function (socket) {
   })
 })
 
-module.exports = {
-  devServer: {
-    proxy: {
-      '/socket.io': {
-        target: 'http://localhost:' + port
-      }
-    }
-  }
-}
+server.listen(process.env.PORT || 5000)
