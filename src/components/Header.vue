@@ -5,74 +5,52 @@
     </h1>
     <ul class="control">
       <li>
-        <button type="button" @click="start" ref="start">Start</button>
+        <button @click="start" :disabled="connectionState !== 'closed'">Start</button>
       </li>
       <li>
-        <button type="button" @click="next" ref="next" disabled>Next</button>
+        <button @click="next" :disabled="connectionState !== 'open'">Next</button>
       </li>
       <li>
-        <button type="button" @click="stop" ref="stop" disabled>Stop</button>
+        <button @click="stop" :disabled="connectionState === 'closed'">Stop</button>
       </li>
     </ul>
   </header>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapMutations, mapActions } from 'vuex'
 
 export default {
   name: 'app-header',
-  computed: mapState(['localStream', 'connectionState']),
-  watch: {
-    connectionState (state) {
-      this.$store.commit('clearMessages')
 
-      if (state === 'closed') {
-        this.$refs.start.disabled = false
-        this.$refs.next.disabled = true
-        this.$refs.stop.disabled = true
-      } else if (state === 'open') {
-        this.$refs.start.disabled = true
-        this.$refs.next.disabled = false
-        this.$refs.stop.disabled = false
-        this.$store.commit('addMessage', {
-          role: 'system',
-          html: '<i class="iconfont icon-check"></i>',
-          text: 'Just say hello to each other :D'
-        })
-      } else if (state === 'connecting') {
-        this.$refs.start.disabled = true
-        this.$refs.next.disabled = true
-        this.$refs.stop.disabled = false
-        this.$store.commit('addMessage', {
-          role: 'system',
-          html: '<i class="iconfont icon-spinner icon-pulse"></i>',
-          text: 'Life is like a non-stop roulette. You never know who you will meet next...'
-        })
-      }
-    }
-  },
+  computed: mapState(['localStream', 'connectionState']),
+
   methods: {
+    ...mapMutations(['createPeerConnection', 'closePeerConnection', 'addLocalStream', 'removeLocalStream']),
+    ...mapActions(['getUserMedia', 'hangUpCall']),
+
     start () {
-      let constraints = { audio: false, video: true }
-      this.$store.commit('createPeerConnection')
-      this.$store.dispatch('getUserMedia', constraints)
+      this.createPeerConnection()
+      this.getUserMedia()
     },
+
     next () {
-      this.$store.commit('closeDataChannel')
-      this.$store.commit('closePeerConnection')
-      this.$store.commit('createPeerConnection')
-      this.$store.commit('addLocalStream', this.localStream)
+      this.closePeerConnection()
+      this.hangUpCall()
+      this.createPeerConnection()
+      this.addLocalStream(this.localStream)
     },
+
     stop () {
-      this.$store.commit('closeDataChannel')
-      this.$store.commit('closePeerConnection')
+      this.closePeerConnection()
+      this.hangUpCall()
+      this.removeLocalStream()
     }
   }
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
 #header {
   height: 60px;
   border-bottom: 1px solid #ddd;

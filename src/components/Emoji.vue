@@ -5,7 +5,7 @@
     </ul>
     <ul class="tabs">
       <li v-for="(tab, index) in tabs" class="tab" :key="index" @click="activeIndex = index">
-        <i class="iconfont" :class="[tab, {active: index === activeIndex}]"></i>
+        <i class="fas" :class="[tab, {active: index === activeIndex}]"></i>
       </li>
     </ul>
   </div>
@@ -19,7 +19,7 @@ export default {
   data () {
     return {
       activeIndex: 0,
-      tabs: ['icon-user', 'icon-leaf', 'icon-bell', 'icon-car', 'icon-font'],
+      tabs: ['fa-user', 'fa-leaf', 'fa-bell', 'fa-car', 'fa-font'],
       groups: Emoji.groups
     }
   },
@@ -33,7 +33,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
 #emoji {
   position: absolute;
   top: -218px;
@@ -97,8 +97,9 @@ export default {
       flex: 1 1 0;
       text-align: center;
 
-      .iconfont {
+      .fas {
         color: #aaa;
+        font-size: 16px;
 
         &.active {
           color: #333;

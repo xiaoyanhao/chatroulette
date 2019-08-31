@@ -1,7 +1,20 @@
 <template>
-  <div id="canvas" v-show="showCanvas" ref="canvas" :style="parentStyle">
-    <canvas class="remote-canvas" ref="remoteCanvas" :width="style.width" :height="style.height"></canvas>
-    <canvas class="local-canvas" ref="localCanvas" @mousedown.stop="startPaint" @mouseup.stop="stopPaint" @mouseout.stop="stopPaint" :width="style.width" :height="style.height"></canvas>
+  <div id="canvas" v-show="isCanvasShown" ref="canvas" :style="parentStyle">
+    <canvas
+      class="remote-canvas"
+      ref="remoteCanvas"
+      :width="style.width"
+      :height="style.height">
+    </canvas>
+    <canvas
+      class="local-canvas"
+      ref="localCanvas"
+      @mousedown.stop="startPaint"
+      @mouseup.stop="stopPaint"
+      @mouseout.stop="stopPaint"
+      :width="style.width"
+      :height="style.height">
+    </canvas>
 
     <span class="canvas-tool">
       <input type="color" name="color" @change="setStrokeStyle">
@@ -17,6 +30,7 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'chat-canvas',
+
   data () {
     return {
       prev: { x: 0, y: 0 },
@@ -27,15 +41,17 @@ export default {
       style: { width: 0, height: 0 }
     }
   },
+
   computed: {
+    ...mapState(['remoteCanvas', 'isCanvasShown', 'socket', 'connectionState']),
     parentStyle () {
       return {
         width: this.style.width + 'px',
         height: this.style.height + 'px'
       }
-    },
-    ...mapState(['remoteCanvas', 'showCanvas', 'dataChannel', 'connectionState'])
+    }
   },
+
   watch: {
     remoteCanvas (payload) {
       let ctx = this.$refs.remoteCanvas.getContext('2d')
@@ -53,6 +69,14 @@ export default {
       }
     }
   },
+
+  mounted () {
+    let sibling = this.$refs.canvas.previousElementSibling
+    this.style.width = sibling.offsetWidth
+    this.style.height = sibling.offsetHeight
+    this.ctx = this.$refs.localCanvas.getContext('2d')
+  },
+
   methods: {
     startPaint (event) {
       this.curr.x = event.offsetX
@@ -80,10 +104,7 @@ export default {
       }
     },
     sync () {
-      this.dataChannel.send(JSON.stringify({
-        type: 'canvas',
-        payload: this.$data
-      }))
+      this.socket.emit('canvas', this.$data)
     },
     setStrokeStyle (event) {
       this.strokeStyle = event.target.value
@@ -110,17 +131,11 @@ export default {
       link.click()
       canvas = link = null
     }
-  },
-  mounted () {
-    let sibling = this.$refs.canvas.previousElementSibling
-    this.style.width = sibling.offsetWidth
-    this.style.height = sibling.offsetHeight
-    this.ctx = this.$refs.localCanvas.getContext('2d')
   }
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
 #canvas {
   position: absolute;
   top: 0;

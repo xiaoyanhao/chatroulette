@@ -1,5 +1,19 @@
 <template>
   <transition-group tag="ul" id="messages" name="messages" @enter="enter">
+    <li key="open" v-if="connectionState === 'open'" class="system message">
+      <p class="text">
+        <span class="tip"><i class="fas fa-check"></i></span>
+        Just say hello to each other :D
+      </p>
+    </li>
+
+    <li key="connecting" v-if="connectionState === 'connecting'" class="system message">
+      <p class="text">
+        <span class="tip"><i class="fas fa-spinner fa-spin"></i></span>
+        Life is like a non-stop roulette. You never know who you will meet next...
+      </p>
+    </li>
+
     <li v-for="(message, index) of messages" :key="`${index}`" :class="message.role" class="message">
       <p class="text"><span class="tip" v-html="message.html"></span>{{message.text}}</p>
     </li>
@@ -11,7 +25,9 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'messages',
-  computed: mapState(['messages']),
+
+  computed: mapState(['messages', 'connectionState']),
+
   methods: {
     enter (el) {
       el.scrollIntoView({ block: 'end', behavior: 'auto' })
@@ -22,7 +38,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
 #messages {
   padding: 20px;
   flex: 1 1 100%;

@@ -2,11 +2,13 @@
   <aside id="webcam">
     <div class="partner">
       <h2>Partner</h2>
-      <video autoplay ref="remote" @loadedmetadata="loaded"></video>
+      <!-- <video autoplay ref="remote" @loadedmetadata="loaded"></video> -->
+      <video autoplay ref="remote"></video>
     </div>
     <div class="you">
       <h2>You</h2>
-      <video autoplay ref="local" @loadedmetadata="loaded"></video>
+      <!-- <video autoplay muted ref="local" @loadedmetadata="loaded"></video> -->
+      <video autoplay muted ref="local"></video>
     </div>
   </aside>
 </template>
@@ -16,7 +18,9 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'webcam',
+
   computed: mapState(['localStream', 'remoteStream']),
+
   watch: {
     remoteStream (stream) {
       this.$refs.remote.srcObject = stream
@@ -25,16 +29,17 @@ export default {
       this.$refs.local.srcObject = stream
     }
   },
+
   methods: {
-    loaded (event) {
-      event.currentTarget.play()
-    }
+    // loaded (event) {
+    //   event.currentTarget.play()
+    // }
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style lang="scss">
+<style lang="less">
 #webcam {
   min-width: 320px;
   border-right: 1px solid #ddd;

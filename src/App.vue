@@ -18,7 +18,10 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
+@import "~@fortawesome/fontawesome-free/less/fontawesome.less";
+@import "~@fortawesome/fontawesome-free/less/solid.less";
+
 html {
   height: 100%;
 }

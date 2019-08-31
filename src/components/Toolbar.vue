@@ -2,47 +2,53 @@
   <div id="tool-bar">
     <ul>
       <li class="tool-bar-item emoji">
-        <i class="iconfont icon-smile" :class="{active: showEmoji}" @click="toggleEmoji"></i>
-        <toolbar-emoji @addEmoji="addEmoji" v-show="showEmoji"></toolbar-emoji>
+        <i class="fas fa-laugh" :class="{active: isEmojiShown}" @click="toggleEmoji"></i>
+        <toolbar-emoji @addEmoji="addEmoji" v-show="isEmojiShown"></toolbar-emoji>
       </li>
 
       <li class="tool-bar-item canvas">
-        <i class="iconfont icon-edit" :class="{active: showCanvas}" @click="toggleCanvas"></i>
+        <i class="fas fa-edit" :class="{active: isCanvasShown}" @click="toggleCanvas"></i>
       </li>
     </ul>
   </div>
 </template>
 
 <script>
+import { mapState, mapMutations } from 'vuex'
 import ToolbarEmoji from './Emoji'
 
 export default {
   name: 'toolbar',
+
+  components: {
+    ToolbarEmoji
+  },
+
   data () {
     return {
-      showEmoji: false,
-      showCanvas: false
+      isEmojiShown: false
     }
   },
+
+  computed: {
+    ...mapState(['isCanvasShown'])
+  },
+
   methods: {
+    ...mapMutations(['toggleCanvas']),
+
     toggleEmoji (event) {
-      this.showEmoji = !this.showEmoji
+      this.isEmojiShown = !this.isEmojiShown
     },
-    toggleCanvas (event) {
-      this.showCanvas = !this.showCanvas
-      this.$store.commit('showCanvas')
-    },
+
     addEmoji (emoji) {
       this.$emit('addEmoji', emoji)
     }
-  },
-  components: {
-    ToolbarEmoji
   }
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
 #tool-bar {
   margin-bottom: 10px;
   font-size: 24px;
@@ -52,7 +58,7 @@ export default {
     margin-right: 20px;
     position: relative;
 
-    .iconfont {
+    .fas {
       color: #767676;
       font-size: 20px;
 

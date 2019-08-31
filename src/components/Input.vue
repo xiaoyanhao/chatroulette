@@ -13,18 +13,27 @@
 
 <script>
 import InputToolbar from './Toolbar'
-import { mapState } from 'vuex'
+import { mapState, mapMutations } from 'vuex'
 
 export default {
   name: 'chat-input',
-  computed: mapState(['dataChannel', 'connectionState']),
+
+  components: {
+    InputToolbar
+  },
+
+  computed: mapState(['socket', 'connectionState']),
+
   methods: {
+    ...mapMutations(['addMessage']),
+
     handleInput (event) {
       if (!event.shiftKey && event.key === 'Enter') {
         event.preventDefault()
         this.sendMessage()
       }
     },
+
     addEmoji (emoji) {
       let textarea = this.$refs.textarea
       let value = textarea.value
@@ -35,32 +44,24 @@ export default {
       textarea.setSelectionRange(start + 2, start + 2) // emoji takes up two code units
       textarea.focus()
     },
+
     sendMessage (event) {
       let textarea = this.$refs.textarea
       let text = textarea.value
 
       if (text) {
-        this.$store.commit('addMessage', { text, role: 'you' })
+        this.addMessage({ text, role: 'you' })
         textarea.value = ''
         if (this.connectionState === 'open') {
-          this.dataChannel.send(JSON.stringify({
-            type: 'message',
-            payload: {
-              text,
-              role: 'partner'
-            }
-          }))
+          this.socket.emit('message', { text, role: 'partner' })
         }
       }
     }
-  },
-  components: {
-    InputToolbar
   }
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
 #input {
   border-top: 1px solid #ddd;
   flex: 1 0 auto;

@@ -21,7 +21,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
 #room {
   flex: 1 1 auto;
   flex-flow: column nowrap;
