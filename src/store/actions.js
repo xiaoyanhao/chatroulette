@@ -73,6 +73,10 @@ export default {
     state.socket.emit('hang-up')
   },
 
+  ping ({ state }) {
+    state.socket.emit('ping')
+  },
+
   getUserMedia ({ commit, state }) {
     return navigator.mediaDevices.getUserMedia(state.mediaConstraints)
       .then((mediaStream) => {

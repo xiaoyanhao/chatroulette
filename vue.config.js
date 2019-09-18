@@ -1,103 +1,125 @@
+const WebSocket = require('ws')
+const crypto = require('crypto')
 const port = 8081
-const io = require('socket.io')(port)
 
-let waiting = []
-let matched = {}
+const wsServer = new WebSocket.Server({
+  port,
+  clientTracking: true
+})
+
+const idLen = 8
+let waitingQueue = []
+let matchedIds = new Map()
 
 function log (text) {
   const time = new Date()
   console.log('[' + time.toLocaleString() + '] ' + text)
 }
 
-function searchPeer (socket) {
-  while (waiting.length) {
-    let index = Math.floor(Math.random() * waiting.length)
-    let id = waiting[index]
-    waiting.splice(index, 1)
+function getPeerSocket (peerId) {
+  for (let client of wsServer.clients) {
+    if (client.id === peerId && client.readyState === WebSocket.OPEN) {
+      return client
+    }
+  }
 
-    if (io.sockets.connected[id]) {
-      matched[id] = socket.id
-      matched[socket.id] = id
-      socket.emit('peer-matched')
-      log(`#${socket.id} matched #${id}`)
+  return null
+}
+
+function searchPeer (socket, msg) {
+  while (waitingQueue.length) {
+    let index = Math.floor(Math.random() * waitingQueue.length)
+    let peerId = waitingQueue[index]
+    let peerSocket = getPeerSocket(peerId)
+
+    waitingQueue.splice(index, 1)
+
+    if (peerSocket) {
+      matchedIds.set(socket.id, peerId)
+      matchedIds.set(peerId, socket.id)
+      socket.send(JSON.stringify(msg))
+      log(`#${socket.id} matches #${peerId}`)
       return
     }
   }
 
-  waiting.push(socket.id)
+  waitingQueue.push(socket.id)
   log(`#${socket.id} adds self into waiting queue`)
 }
 
-function hangUp (socketId) {
-  let id = matched[socketId]
+function hangUp (socketId, msg) {
+  if (matchedIds.has(socketId)) {
+    let peerId = matchedIds.get(socketId)
+    let peerSocket = getPeerSocket(peerId)
 
-  if (id) {
-    delete matched[socketId]
-    delete matched[id]
-    io.sockets.connected[id].emit('hang-up')
-    log(`#${socketId} hang up #${id}`)
+    matchedIds.delete(socketId)
+    matchedIds.delete(peerId)
+
+    if (peerSocket) {
+      peerSocket.send(JSON.stringify(msg))
+      log(`#${socketId} hangs up #${peerId}`)
+      return
+    }
   } else {
-    let myIndex = waiting.indexOf(socketId)
+    let myIndex = waitingQueue.indexOf(socketId)
     if (myIndex !== -1) {
-      waiting.splice(myIndex, 1)
+      waitingQueue.splice(myIndex, 1)
       log(`#${socketId} removes self from waiting queue`)
     }
   }
 }
 
-function sendToPeer (socketId, event, msg) {
-  let id = matched[socketId]
+function sendToPeer (socketId, msg) {
+  if (!matchedIds.has(socketId)) {
+    return
+  }
 
-  if (id && io.sockets.connected[id]) {
-    io.sockets.connected[id].emit(event, msg)
-    log(`#${socketId} send ${event} to #${id}`)
+  let peerId = matchedIds.get(socketId)
+  let peerSocket = getPeerSocket(peerId)
+
+  if (peerSocket) {
+    peerSocket.send(JSON.stringify({ type: msg.type, data: msg.data }))
+    log(`#${socketId} sends ${msg.type} to #${peerId}`)
+    return
   }
 }
 
-io.on('connection', function (socket) {
-  log(`#${socket.id} socket connect`)
+wsServer.on('connection', function (socket) {
+  socket.id = crypto.randomBytes(idLen / 2).toString('hex').slice(0, idLen)
 
-  socket.on('search-peer', () => {
-    searchPeer(socket)
+  log(`#${socket.id} connected`)
+
+  socket.on('message', (message) => {
+    let msg = JSON.parse(message)
+
+    switch (msg.type) {
+      case 'new-ice-candidate':
+      case 'video-offer':
+      case 'video-answer':
+      case 'message':
+      case 'canvas':
+        sendToPeer(socket.id, msg)
+        break
+      case 'hang-up':
+        hangUp(socket.id, { type: 'hang-up' })
+        break
+      case 'search-peer':
+        searchPeer(socket, { type: 'peer-matched' })
+        break
+      case 'ping':
+        socket.send(JSON.stringify({ type: 'pong' }))
+        break
+      default:
+        break
+    }
   })
 
-  socket.on('hang-up', () => {
-    hangUp(socket.id)
-  })
-
-  socket.on('disconnect', () => {
-    log(`#${socket.id} socket disconnect`)
-    hangUp(socket.id)
-  })
-
-  socket.on('video-offer', (msg) => {
-    sendToPeer(socket.id, 'video-offer', msg)
-  })
-
-  socket.on('video-answer', (msg) => {
-    sendToPeer(socket.id, 'video-answer', msg)
-  })
-
-  socket.on('new-ice-candidate', (msg) => {
-    sendToPeer(socket.id, 'new-ice-candidate', msg)
-  })
-
-  socket.on('message', (msg) => {
-    sendToPeer(socket.id, 'message', msg)
-  })
-
-  socket.on('canvas', (msg) => {
-    sendToPeer(socket.id, 'canvas', msg)
+  socket.on('close', (code, reason) => {
+    log(`#${socket.id} disconnected: [${code}]${reason}`)
+    hangUp(socket.id, { type: 'hang-up' })
   })
 })
 
 module.exports = {
-  productionSourceMap: false,
-  devServer: {
-    proxy: {
-      '/socket.io': {
-        target: 'http://localhost:' + port
-      }
-    }
-  }
+  productionSourceMap: false
 }

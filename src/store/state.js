@@ -1,4 +1,7 @@
-import io from 'socket.io-client'
+const hostname = window.location.hostname ? window.location.hostname : 'localhost'
+const scheme = document.location.protocol === 'https:' ? 'wss' : 'ws'
+const port = hostname === 'localhost' ? 8081 : (scheme === 'wss' ? 443 : 80)
+const serverUrl = scheme + '://' + hostname + ':' + port
 
 export default {
   peerConnection: null,
@@ -31,5 +34,5 @@ export default {
       }
     }
   },
-  socket: io()
+  socket: new WebSocket(serverUrl, 'json')
 }

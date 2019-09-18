@@ -1,4 +1,4 @@
-import state from './state'
+import rootState from './state'
 import util from '../util'
 
 /**
@@ -9,7 +9,7 @@ import util from '../util'
 function iceCandidateHandler (event) {
   if (event.candidate) {
     util.log('*** Outgoing ICE candidate: ' + event.candidate.candidate)
-    state.socket.emit('new-ice-candidate', event.candidate)
+    rootState.socket.emit('new-ice-candidate', event.candidate)
   }
 }
 
@@ -24,12 +24,11 @@ function iceConnectionStateChangeHandler (event) {
   switch (event.target.iceConnectionState) {
     case 'connected':
     case 'complete':
-      state.connectionState = 'open'
+      rootState.connectionState = 'open'
       break
     case 'closed':
     case 'failed':
     case 'disconnected':
-      state.connectionState = 'closed'
       closeVideoCall()
       break
   }
@@ -68,9 +67,9 @@ function signalingStateChangeHandler (event) {
 function negotiationNeededHandler (event) {
   util.log('*** Negotiation needed')
 
-  if (state.connectionState === 'closed') {
-    state.connectionState = 'connecting'
-    state.socket.emit('search-peer')
+  if (rootState.connectionState === 'closed') {
+    rootState.connectionState = 'connecting'
+    rootState.socket.emit('search-peer')
   }
 }
 
@@ -90,12 +89,12 @@ function negotiationNeededHandler (event) {
  */
 function trackHandler (event) {
   util.log('*** the remote peer adds a track to the connection')
-  state.remoteStream = event.streams[0]
+  rootState.remoteStream = event.streams[0]
 }
 
 function removeTrackHandler (event) {
   util.log('*** the remote peer removes a track from the connection')
-  const trackList = state.remoteStream.getTracks()
+  const trackList = rootState.remoteStream.getTracks()
   if (trackList.length === 0) {
     closeVideoCall()
   }
@@ -108,7 +107,9 @@ function removeTrackHandler (event) {
  * failure is detected.
  */
 function closeVideoCall () {
-  if (!state.peerConnection) {
+  rootState.connectionState = 'closed'
+
+  if (!rootState.peerConnection) {
     return
   }
 
@@ -116,23 +117,23 @@ function closeVideoCall () {
 
   // Disconnect all our event listeners; we don't want stray events
   // to interfere with the hangup while it's ongoing.
-  state.peerConnection.removeEventListener('icecandidate', iceCandidateHandler)
-  state.peerConnection.removeEventListener('iceconnectionstatechange', iceConnectionStateChangeHandler)
-  state.peerConnection.removeEventListener('icegatheringstatechange', iceGatheringStateChangeHandler)
-  state.peerConnection.removeEventListener('signalingstatechange', signalingStateChangeHandler)
-  state.peerConnection.removeEventListener('negotiationneeded', negotiationNeededHandler)
-  state.peerConnection.removeEventListener('track', trackHandler)
-  state.peerConnection.removeEventListener('removetrack ', removeTrackHandler)
+  rootState.peerConnection.removeEventListener('icecandidate', iceCandidateHandler)
+  rootState.peerConnection.removeEventListener('iceconnectionstatechange', iceConnectionStateChangeHandler)
+  rootState.peerConnection.removeEventListener('icegatheringstatechange', iceGatheringStateChangeHandler)
+  rootState.peerConnection.removeEventListener('signalingstatechange', signalingStateChangeHandler)
+  rootState.peerConnection.removeEventListener('negotiationneeded', negotiationNeededHandler)
+  rootState.peerConnection.removeEventListener('track', trackHandler)
+  rootState.peerConnection.removeEventListener('removetrack ', removeTrackHandler)
 
-  if (state.remoteStream) {
-    state.remoteStream.getTracks().forEach(track => {
+  if (rootState.remoteStream) {
+    rootState.remoteStream.getTracks().forEach(track => {
       track.stop()
     })
-    state.remoteStream = null
+    rootState.remoteStream = null
   }
 
-  state.peerConnection.close()
-  state.peerConnection = null
+  rootState.peerConnection.close()
+  rootState.peerConnection = null
 }
 
 export default {
@@ -150,7 +151,7 @@ export default {
 
   createPeerConnection (state) {
     util.log('Setting up a connection...')
-    state.peerConnection = new RTCPeerConnection(null)
+    state.peerConnection = new RTCPeerConnection(state.connectionConfig)
     state.peerConnection.addEventListener('icecandidate', iceCandidateHandler)
     state.peerConnection.addEventListener('iceconnectionstatechange', iceConnectionStateChangeHandler)
     state.peerConnection.addEventListener('icegatheringstatechange', iceGatheringStateChangeHandler)
@@ -162,7 +163,6 @@ export default {
 
   closePeerConnection (state) {
     closeVideoCall()
-    state.connectionState = 'closed'
     state.messages.splice(0)
   },
 
