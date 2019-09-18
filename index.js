@@ -1,8 +1,14 @@
 const Koa = require('koa')
 const app = new Koa()
 const server = require('http').createServer(app.callback())
-const io = require('socket.io')(server)
+const crypto = require('crypto')
+const WebSocket = require('ws')
 const send = require('koa-send')
+
+const port = 8081
+const root = __dirname + '/dist'
+const entry = 'index.html'
+const maxage = 1000 * 60 * 60 * 24 * 30
 
 app.use(async (ctx, next) => {
   try {
@@ -16,72 +22,128 @@ app.use(async (ctx, next) => {
 
 app.use(async ctx => {
   if (ctx.path === '/') {
-    await send(ctx, ctx.path + 'index.html', { root: __dirname + '/static' })
+    await send(ctx, ctx.path + entry, { root })
   } else {
-    await send(ctx, ctx.path, { root: __dirname + '/static' })
+    await send(ctx, ctx.path, { root, maxage })
   }
 })
 
-let waiting = []
-let matched = {}
+const wsServer = new WebSocket.Server({
+  server,
+  clientTracking: true
+})
 
-io.on('connection', function (socket) {
-  const log = function (...args) {
-    args.unshift('From server:')
-    socket.emit('log', args)
+const idLen = 8
+let waitingQueue = []
+let matchedIds = new Map()
+
+function log (text) {
+  const time = new Date()
+  console.log('[' + time.toLocaleString() + '] ' + text)
+}
+
+function getPeerSocket (peerId) {
+  for (let client of wsServer.clients) {
+    if (client.id === peerId && client.readyState === WebSocket.OPEN) {
+      return client
+    }
   }
 
-  log('socket connected', socket.id)
+  return null
+}
 
-  socket.on('look for peer', function () {
-    let myIndex = waiting.indexOf(socket.id)
+function searchPeer (socket, msg) {
+  while (waitingQueue.length) {
+    let index = Math.floor(Math.random() * waitingQueue.length)
+    let peerId = waitingQueue[index]
+    let peerSocket = getPeerSocket(peerId)
+
+    waitingQueue.splice(index, 1)
+
+    if (peerSocket) {
+      matchedIds.set(socket.id, peerId)
+      matchedIds.set(peerId, socket.id)
+      socket.send(JSON.stringify(msg))
+      log(`#${socket.id} matches #${peerId}`)
+      return
+    }
+  }
+
+  waitingQueue.push(socket.id)
+  log(`#${socket.id} adds self into waiting queue`)
+}
+
+function hangUp (socketId, msg) {
+  if (matchedIds.has(socketId)) {
+    let peerId = matchedIds.get(socketId)
+    let peerSocket = getPeerSocket(peerId)
+
+    matchedIds.delete(socketId)
+    matchedIds.delete(peerId)
+
+    if (peerSocket) {
+      peerSocket.send(JSON.stringify(msg))
+      log(`#${socketId} hangs up #${peerId}`)
+      return
+    }
+  } else {
+    let myIndex = waitingQueue.indexOf(socketId)
     if (myIndex !== -1) {
-      waiting.splice(myIndex, 1)
+      waitingQueue.splice(myIndex, 1)
+      log(`#${socketId} removes self from waiting queue`)
     }
+  }
+}
 
-    while (waiting.length) {
-      let index = Math.floor(Math.random() * waiting.length)
-      let id = waiting[index]
-      waiting.splice(index, 1)
+function sendToPeer (socketId, msg) {
+  if (!matchedIds.has(socketId)) {
+    return
+  }
 
-      if (io.sockets.connected[id]) {
-        matched[id] = socket.id
-        matched[socket.id] = id
-        socket.emit('find peer')
-        log('find peer')
-        return
-      }
+  let peerId = matchedIds.get(socketId)
+  let peerSocket = getPeerSocket(peerId)
+
+  if (peerSocket) {
+    peerSocket.send(JSON.stringify({ type: msg.type, data: msg.data }))
+    log(`#${socketId} sends ${msg.type} to #${peerId}`)
+    return
+  }
+}
+
+wsServer.on('connection', function (socket) {
+  socket.id = crypto.randomBytes(idLen / 2).toString('hex').slice(0, idLen)
+
+  log(`#${socket.id} connected`)
+
+  socket.on('message', (message) => {
+    let msg = JSON.parse(message)
+
+    switch (msg.type) {
+      case 'new-ice-candidate':
+      case 'video-offer':
+      case 'video-answer':
+      case 'message':
+      case 'canvas':
+        sendToPeer(socket.id, msg)
+        break
+      case 'hang-up':
+        hangUp(socket.id, { type: 'hang-up' })
+        break
+      case 'search-peer':
+        searchPeer(socket, { type: 'peer-matched' })
+        break
+      case 'ping':
+        socket.send(JSON.stringify({ type: 'pong' }))
+        break
+      default:
+        break
     }
-
-    waiting.push(socket.id)
-    log('waiting')
   })
 
-  socket.on('hangup', function () {
-    let id = matched[socket.id]
-    if (id) {
-      delete matched[socket.id]
-      delete matched[id]
-      io.sockets.connected[id].emit('restart')
-    }
-  })
-
-  socket.on('disconnect', function () {
-    let id = matched[socket.id]
-    if (id) {
-      delete matched[socket.id]
-      delete matched[id]
-      io.sockets.connected[id].emit('restart')
-    }
-  })
-
-  socket.on('signal', function (msg) {
-    let id = matched[socket.id]
-
-    if (id && io.sockets.connected[id]) {
-      io.sockets.connected[id].emit('signal', { type: msg.type, data: msg.data })
-    }
+  socket.on('close', (code, reason) => {
+    log(`#${socket.id} disconnected: [${code}]${reason}`)
+    hangUp(socket.id, { type: 'hang-up' })
   })
 })
 
-server.listen(process.env.PORT || 5000)
+server.listen(process.env.PORT || port)

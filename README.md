@@ -7,7 +7,7 @@
 npm install
 ```
 
-All the static files should be placed in `static` directory.
+All the static files should be placed in `dist` directory.
 
 ### Start up the server
 ```

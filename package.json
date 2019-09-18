@@ -1,6 +1,6 @@
 {
   "name": "chatroulette",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Chatroulette is a place where you can interact with new people over text-chat, webcam and mic.",
   "author": "xiaoyanhao <xiaoyh5@mail2.sysu.edu.cn>",
   "private": true,
@@ -12,9 +12,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "koa": "^2.7.0",
+    "koa": "^2.8.1",
     "koa-send": "^5.0.0",
-    "socket.io": "^2.2.0"
+    "ws": "^7.1.2"
   },
   "keywords": [
     "chat",
@@ -22,5 +22,6 @@
     "chatroulette",
     "heroku"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {}
 }
