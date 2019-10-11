@@ -151,7 +151,7 @@ export default {
 
   createPeerConnection (state) {
     util.log('Setting up a connection...')
-    state.peerConnection = new RTCPeerConnection(state.connectionConfig)
+    state.peerConnection = new RTCPeerConnection(null)
     state.peerConnection.addEventListener('icecandidate', iceCandidateHandler)
     state.peerConnection.addEventListener('iceconnectionstatechange', iceConnectionStateChangeHandler)
     state.peerConnection.addEventListener('icegatheringstatechange', iceGatheringStateChangeHandler)
